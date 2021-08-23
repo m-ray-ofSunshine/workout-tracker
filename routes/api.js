@@ -1,39 +1,45 @@
 const router = require("express").Router();
-const Exercise = require("../models/Exercise");
-const path = require('path')
-router.get("/exercise", (req, res) => {
-  
-      res.sendFile(path.join(__dirname,'../public/exercise.html'))
-    });
-    
-router.post("/api/transaction", ({ body }, res) => {
-  Transaction.create(body)
-    .then(dbTransaction => {
-      res.json(dbTransaction);
-    })
-    .catch(err => {
-      res.status(400).json(err);
+const {Workout} = require("../models/");
+
+router.get("/api/workouts", (req, res) => {
+    Workout.aggregate([
+        {
+            $addFields: {
+                totalDuration: {
+                    $sum: '$exercises.duration'
+                }
+            }
+        }
+    ]).then((data) => {
+        res.json(data);
     });
 });
 
-router.post("/api/transaction/bulk", ({ body }, res) => {
-  Transaction.insertMany(body)
-    .then(dbTransaction => {
-      res.json(dbTransaction);
-    })
-    .catch(err => {
-      res.status(400).json(err);
+router.get("/api/workouts/range", (req, res) => {
+    Workout.aggregate([
+        {
+            $addFields: {
+                totalDuration: {
+                    $sum: '$exercises.duration'
+                }
+            }
+        }
+    ]).sort({_id:-1}).limit(7).then((data) => {
+        res.json(data);
     });
 });
 
-router.get("/api/transaction", (req, res) => {
-  Transaction.find({})
-    .sort({ date: -1 })
-    .then(dbTransaction => {
-      res.json(dbTransaction);
-    })
-    .catch(err => {
-      res.status(400).json(err);
+router.post("/api/workouts", (req, res) => {
+    Workout.create(req.body).then((data) => {
+        res.json(data);
+    });
+});
+
+router.put("/api/workouts/:id", (req, res) => {
+    Workout.findByIdAndUpdate(req.params.id, {
+        $push: { exercises: req.body }
+    }).then((data) => {
+        res.json(data);
     });
 });
 
